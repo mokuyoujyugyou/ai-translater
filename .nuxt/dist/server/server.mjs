@@ -1,0 +1,1 @@
+export { default } from "file:///C:/Users/kouda/Documents/git/ai-translater/node_modules/@nuxt/vite-builder/dist/runtime/vite-node.mjs"
