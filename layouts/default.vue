@@ -21,10 +21,18 @@
               class="upload-area"
               @dragover.prevent="handleDragOver"
               @drop="handleDrop"
-              style="width: 288px; height: 259px; border: 2px dashed #cccccc; text-align: center; padding: 20px;"
+              @dragleave="handleDragLeave"
+              :class="{ 'drag-active': isDragActive }"
+              style="border: 2px dashed #cccccc; padding: 20px; text-align: center; margin: 20px; border-radius: 10px;"
             >
-              <p class="upload-text">ここにファイルをドラッグしてください</p>
-              <input type="file" ref="fileInput" @change="onFileChange" style="display: none;" />
+              <p>ここに音声または動画ファイルをドラッグしてください</p>
+              <input
+                type="file"
+                @change="onFileChange"
+                style="display: none"
+                ref="fileInput"
+                accept="audio/*,video/*"
+              />
               <v-btn @click="triggerFileInput" color="primary">ファイルを選択</v-btn>
             </div>
 
@@ -70,10 +78,10 @@
           </v-container>
         </v-col>
 
-        
         <!-- 右側: 翻訳結果エリア -->
         <v-col class="right-column" cols="8">
           <v-container>
+            <!-- 音声生成フォームと翻訳結果 -->
             <div v-if="translationResults.length > 0" class="translation-results-container">
               <h3>翻訳結果:</h3>
               <ul>
@@ -82,9 +90,35 @@
                   <p><strong>翻訳文:</strong> {{ formatWords(result.translated_sentence.words) }}</p>
                 </li>
               </ul>
-            </div>
-            <div v-else>
-              <p>翻訳結果がここに表示されます。</p>
+
+              <!-- 音声生成フォーム -->
+              <div>
+                <h3>音声生成:</h3>
+                <form @submit.prevent="generateVoice">
+                  <label>文章:</label>
+                  <input v-model="text" type="text" placeholder="読み上げ文章" required />
+                  <label>キャラクター:</label>
+                  <select v-model="character">
+                    <option value="ayase_ririse">綾瀬リリセ</option>
+                  </select>
+                  <label>感情:</label>
+                  <select v-model="emotion">
+                    <option value="happy=50">喜び (50%)</option>
+                    <option value="sad=50">悲しみ (50%)</option>
+                    <option value="angry=50">怒り (50%)</option>
+                  </select>
+                  <v-btn type="submit">音声生成</v-btn>
+                </form>
+              </div>
+
+              <!-- 音声再生プレーヤ -->
+              <div v-if="audioUrl" class="media-player-container">
+                <h3>再生:</h3>
+                <audio controls>
+                  <source :src="audioUrl" type="audio/wav" />
+                  お使いのブラウザはオーディオ要素をサポートしていません。
+                </audio>
+              </div>
             </div>
           </v-container>
         </v-col>
@@ -99,12 +133,40 @@
 export default {
   data() {
     return {
+      text: '',
+      character: 'ayase_ririse',
+      emotion: 'happy=50',
+      audioUrl: null,
       toggle: false,
       helpVisible: false,
       translationResults: [],
+      isDragActive: false, // ドラッグ中かどうかを管理
     };
   },
   methods: {
+    async generateVoice() {
+      const formData = new FormData();
+      formData.append('text', this.text);
+      formData.append('character', this.character);
+      formData.append('emotion', this.emotion);
+
+      try {
+        const response = await fetch('/api/v1/translate', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('音声生成中にエラーが発生しました。');
+        }
+
+        const blob = await response.blob();
+        this.audioUrl = URL.createObjectURL(blob); // 生成された音声ファイルを再生
+      } catch (error) {
+        console.error(error.message);
+        alert('エラーが発生しました。もう一度試してください。');
+      }
+    },
     showHelp() {
       this.helpVisible = true;
     },
@@ -113,9 +175,14 @@ export default {
     },
     handleDragOver(event) {
       event.preventDefault();
+      this.isDragActive = true; // ドラッグ中の見た目を変更
+    },
+    handleDragLeave() {
+      this.isDragActive = false; // ドラッグが終了したらリセット
     },
     handleDrop(event) {
       event.preventDefault();
+      this.isDragActive = false; // ドロップ後リセット
       const files = event.dataTransfer.files;
       if (files.length > 0) {
         this.handleFileUpload(files[0]);
@@ -153,6 +220,9 @@ export default {
         console.error(error.message);
         alert('エラーが発生しました。もう一度試してください。');
       }
+    },
+    formatWords(words) {
+      return words.map((word) => word.text).join(' ');
     },
   },
 };
@@ -241,6 +311,7 @@ export default {
   font-family: Inter, sans-serif;
   margin-left: 20px;
 }
+
 .translation-results-container {
   background-color: #f0f0f0;
   border-radius: 12px;
@@ -254,6 +325,4 @@ export default {
   color: #888888;
   font-style: italic;
 }
-
-
 </style>
