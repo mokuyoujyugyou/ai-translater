@@ -17,36 +17,20 @@
           <!-- 左側コンテンツ -->
           <v-container class="upload-container">
             <!-- アップロードエリア -->
-            <div
-              class="upload-area"
-              @dragover.prevent="handleDragOver"
-              @drop="handleDrop"
-              @dragleave="handleDragLeave"
+            <div class="upload-area" @dragover.prevent="handleDragOver" @drop="handleDrop" @dragleave="handleDragLeave"
               :class="{ 'drag-active': isDragActive }"
-              style="border: 2px dashed #cccccc; padding: 20px; text-align: center; margin: 20px; border-radius: 10px;"
-            >
+              style="border: 2px dashed #cccccc; padding: 20px; text-align: center; margin: 20px; border-radius: 10px;">
               <p>ここに音声または動画ファイルをドラッグしてください</p>
-              <input
-                type="file"
-                @change="onFileChange"
-                style="display: none"
-                ref="fileInput"
-                accept="audio/*,video/*"
-              />
+              <input type="file" @change="onFileChange" style="display: none" ref="fileInput"
+                accept="audio/*,video/*" />
               <v-btn @click="triggerFileInput" color="primary">ファイルを選択</v-btn>
             </div>
 
             <!-- 横並びのダウンロードボタンとトグルボタン -->
             <v-row class="action-row" align="center">
               <v-btn class="download-button" style="top: 10px;">ダウンロード</v-btn>
-              <v-switch
-                v-model="toggle"
-                inset
-                class="toggle-switch"
-                label="感情に色を付ける"
-                :color="toggle ? 'green' : 'grey'"
-                hide-details
-              />
+              <v-switch v-model="toggle" inset class="toggle-switch" label="感情に色を付ける" :color="toggle ? 'green' : 'grey'"
+                hide-details />
             </v-row>
 
             <!-- ヘルプボタン -->
@@ -57,11 +41,7 @@
               <v-card>
                 <v-card-title>
                   <span>ヘルプ</span>
-                  <v-btn
-                    @click="closeHelp"
-                    icon
-                    style="position: absolute; right: 10px; top: 10px; font-size: 24px;"
-                  >
+                  <v-btn @click="closeHelp" icon style="position: absolute; right: 10px; top: 10px; font-size: 24px;">
                     <v-icon>mdi-close</v-icon>
                   </v-btn>
                 </v-card-title>
@@ -151,7 +131,7 @@ export default {
       formData.append('emotion', this.emotion);
 
       try {
-        const response = await fetch('/api/v1/translate', {
+        const response = await fetch('/api/v1/voice_gen', {
           method: 'POST',
           body: formData,
         });
@@ -267,7 +247,8 @@ export default {
   align-items: center;
   justify-content: center;
   position: relative;
-  top: 150px; /* 横線の下に配置 */
+  top: 150px;
+  /* 横線の下に配置 */
 }
 
 .upload-area {
@@ -290,7 +271,8 @@ export default {
 .download-button {
   width: 180px;
   height: 75px;
-  background-color: #d9d9d9; /* ダウンロード不可能時 */
+  background-color: #d9d9d9;
+  /* ダウンロード不可能時 */
   color: #ffffff;
   border-radius: 100px;
   border: 1px solid #000000;
@@ -303,7 +285,8 @@ export default {
   justify-content: center;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  margin-right: 20px; /* ボタン間のスペース */
+  margin-right: 20px;
+  /* ボタン間のスペース */
 }
 
 /* トグルスイッチ */
