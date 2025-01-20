@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <v-main>
-      <!-- 横線 (x: 0, y: 92) -->
+      <!-- 横線 -->
       <v-divider class="horizontal-line" />
 
       <!-- 画面最上部中央に配置されたテキスト -->
@@ -11,37 +11,36 @@
         </v-col>
       </v-row>
 
-      <!-- アップロードエリアと右側コンテンツ -->
-      <v-row>
+      <!-- アップロードシステム全体を横線の下に配置 -->
+      <v-row class="upload-system-row">
         <v-col class="left-column" cols="4">
-          <!-- 左側コンテンツ -->
+          <!-- アップロードエリア -->
           <v-container class="upload-container">
-            <!-- アップロードエリア -->
-            <div class="upload-area" @dragover.prevent="handleDragOver" @drop="handleDrop" @dragleave="handleDragLeave"
-              :class="{ 'drag-active': isDragActive }"
-              style="border: 2px dashed #cccccc; padding: 20px; text-align: center; margin: 20px; border-radius: 10px;">
-              <p>ここに音声または動画ファイルをドラッグしてください</p>
-              <input type="file" @change="onFileChange" style="display: none" ref="fileInput"
-                accept="audio/*,video/*" />
-              <v-btn @click="triggerFileInput" color="primary">ファイルを選択</v-btn>
+            <div class="upload-area">
+              <p class="upload-text">ここにファイルをドラッグしてください</p>
             </div>
-
-            <!-- 横並びのダウンロードボタンとトグルボタン -->
             <v-row class="action-row" align="center">
-              <v-btn class="download-button" style="top: 10px;">ダウンロード</v-btn>
-              <v-switch v-model="toggle" inset class="toggle-switch" label="感情に色を付ける" :color="toggle ? 'green' : 'grey'"
-                hide-details />
+              <v-btn class="download-button">ダウンロード</v-btn>
+              <v-switch
+                v-model="toggle"
+                inset
+                class="toggle-switch"
+                label="感情に色を付ける"
+                :color="toggle ? 'green' : 'grey'"
+                hide-details
+              />
             </v-row>
-
             <!-- ヘルプボタン -->
             <v-btn @click="showHelp" class="help-btn">ヘルプ</v-btn>
-
-            <!-- ヘルプメッセージ -->
             <v-dialog v-model="helpVisible" max-width="400px">
               <v-card>
                 <v-card-title>
                   <span>ヘルプ</span>
-                  <v-btn @click="closeHelp" icon style="position: absolute; right: 10px; top: 10px; font-size: 24px;">
+                  <v-btn
+                    @click="closeHelp"
+                    icon
+                    style="position: absolute; right: 10px; top: 10px; font-size: 24px;"
+                  >
                     <v-icon>mdi-close</v-icon>
                   </v-btn>
                 </v-card-title>
@@ -58,51 +57,23 @@
           </v-container>
         </v-col>
 
-        <!-- 右側: 翻訳結果エリア -->
+        <!-- 右側コンテンツ -->
         <v-col class="right-column" cols="8">
           <v-container>
-            <!-- 音声生成フォームと翻訳結果 -->
-            <div v-if="translationResults.length > 0" class="translation-results-container">
-              <h3>翻訳結果:</h3>
-              <ul>
-                <li v-for="(result, index) in translationResults" :key="index">
-                  <p><strong>原文:</strong> {{ formatWords(result.origin_sentence.words) }}</p>
-                  <p><strong>翻訳文:</strong> {{ formatWords(result.translated_sentence.words) }}</p>
-                </li>
-              </ul>
-
-              <!-- 音声生成フォーム -->
-              <div>
-                <h3>音声生成:</h3>
-                <form @submit.prevent="generateVoice">
-                  <label>文章:</label>
-                  <input v-model="text" type="text" placeholder="読み上げ文章" required />
-                  <label>キャラクター:</label>
-                  <select v-model="character">
-                    <option value="ayase_ririse">綾瀬リリセ</option>
-                  </select>
-                  <label>感情:</label>
-                  <select v-model="emotion">
-                    <option value="happy=50">喜び (50%)</option>
-                    <option value="sad=50">悲しみ (50%)</option>
-                    <option value="angry=50">怒り (50%)</option>
-                  </select>
-                  <v-btn type="submit">音声生成</v-btn>
-                </form>
-              </div>
-
-              <!-- 音声再生プレーヤ -->
-              <div v-if="audioUrl" class="media-player-container">
-                <h3>再生:</h3>
-                <audio controls>
-                  <source :src="audioUrl" type="audio/wav" />
-                  お使いのブラウザはオーディオ要素をサポートしていません。
-                </audio>
-              </div>
+            <!-- 正方形を中央に配置 -->
+            <div class="square-box">
+              <p>1234</p>
+            </div>
+            <!-- 正方形の下に感情テキストを横並びに配置 -->
+            <div class="emotion-text-container">
+              <p class="emotion-text anger">怒り</p>
+              <p class="emotion-text joy">喜び</p>
+              <p class="emotion-text sadness">悲しみ</p>
             </div>
           </v-container>
         </v-col>
       </v-row>
+
       <!-- 縦線 -->
       <v-divider class="vertical-line" vertical />
     </v-main>
@@ -113,96 +84,16 @@
 export default {
   data() {
     return {
-      text: '',
-      character: 'ayase_ririse',
-      emotion: 'happy=50',
-      audioUrl: null,
       toggle: false,
       helpVisible: false,
-      translationResults: [],
-      isDragActive: false, // ドラッグ中かどうかを管理
     };
   },
   methods: {
-    async generateVoice() {
-      const formData = new FormData();
-      formData.append('text', this.text);
-      formData.append('character', this.character);
-      formData.append('emotion', this.emotion);
-
-      try {
-        const response = await fetch('/api/v1/voice_gen', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error('音声生成中にエラーが発生しました。');
-        }
-
-        const blob = await response.blob();
-        this.audioUrl = URL.createObjectURL(blob); // 生成された音声ファイルを再生
-      } catch (error) {
-        console.error(error.message);
-        alert('エラーが発生しました。もう一度試してください。');
-      }
-    },
     showHelp() {
       this.helpVisible = true;
     },
     closeHelp() {
       this.helpVisible = false;
-    },
-    handleDragOver(event) {
-      event.preventDefault();
-      this.isDragActive = true; // ドラッグ中の見た目を変更
-    },
-    handleDragLeave() {
-      this.isDragActive = false; // ドラッグが終了したらリセット
-    },
-    handleDrop(event) {
-      event.preventDefault();
-      this.isDragActive = false; // ドロップ後リセット
-      const files = event.dataTransfer.files;
-      if (files.length > 0) {
-        this.handleFileUpload(files[0]);
-      }
-    },
-    triggerFileInput() {
-      this.$refs.fileInput.click();
-    },
-    onFileChange(event) {
-      const file = event.target.files[0];
-      if (file) {
-        this.handleFileUpload(file);
-      }
-    },
-    async handleFileUpload(file) {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-        const response = await fetch('/api/v1/translate', {
-          method: 'POST',
-          headers: {
-            // FormDataではContent-Typeを自動設定
-          },
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error('アップロード中にエラーが発生しました。');
-        }
-
-        const data = await response.json();
-        this.translationResults = data.entries.map((entry) => entry.translated_sentence);
-      } catch (error) {
-        console.error(error.message);
-        alert('エラーが発生しました。もう一度試してください。');
-      }
-    },
-    formatWords(words) {
-      return words.map((word) => word.text).join(' ');
     },
   },
 };
@@ -224,10 +115,9 @@ export default {
 .horizontal-line {
   position: absolute;
   top: 92px;
-  width: 1800px;
-  height: 0;
+  width: 100%;
+  height: 1px;
   background-color: #000000;
-  left: 0;
 }
 
 /* 縦線 */
@@ -240,72 +130,71 @@ export default {
   background-color: #000000;
 }
 
-/* アップロードエリア */
+/* アップロードシステム全体のスタイル */
+.upload-system-row {
+  margin: 30px; /* 横線の下に全体を配置するマージン */
+}
+
 .upload-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  top: 150px;
-  /* 横線の下に配置 */
+  text-align: center;
 }
 
 .upload-area {
-  background-color: #D9D9D9;
-  border-radius: 54px;
-  border: 1px solid #000;
-  text-align: center;
-  padding: 20px;
-  margin-bottom: 20px;
-}
-
-/* アップロードテキスト */
-.upload-text {
-  font-family: Inter;
-  font-size: 24px;
-  color: #000;
-}
-
-/* ダウンロードボタン */
-.download-button {
-  width: 180px;
-  height: 75px;
-  background-color: #d9d9d9;
-  /* ダウンロード不可能時 */
-  color: #ffffff;
-  border-radius: 100px;
-  border: 1px solid #000000;
-  font-family: 'Inter', sans-serif;
-  font-size: 20px;
-  letter-spacing: 0;
-  text-align: center;
+  width: 288px;
+  height: 259px;
+  background-color: #f5f5f5;
+  margin: 50pt;
+  border: 1px dashed #aaa;
   display: flex;
-  align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  margin-right: 20px;
-  /* ボタン間のスペース */
+  align-items: center;
+  border-radius: 8px;
 }
 
-/* トグルスイッチ */
-.toggle-switch {
-  font-family: Inter, sans-serif;
-  margin-left: 20px;
+.action-row {
+  margin-top: 10px;
 }
 
-.translation-results-container {
-  background-color: #f0f0f0;
-  border-radius: 12px;
-  padding: 20px;
-  margin-top: 20px;
-  border: 1px solid #cccccc;
+.help-btn {
+  margin-top: 10px; /* ダウンロードボタンの下に配置 */
 }
 
-.translation-results-placeholder {
-  text-align: center;
-  color: #888888;
-  font-style: italic;
+/* 正方形ボックス */
+.square-box {
+  width: 910px;
+  height: 550px;
+  background-color: #D9D9D9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 50px auto 0; /* 横線の下に余白を追加 */
+  border: 1px solid #000000;
+  border-radius: 10px;
+}
+
+/* 正方形の下に感情テキストを横並びに配置 */
+.emotion-text-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px; /* 正方形ボックスの下に間隔を追加 */
+}
+
+.emotion-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 32px;
+  font-weight: bold;
+  margin: 0 10px; /* テキスト間にスペースを追加 */
+}
+
+.anger {
+  color: #BA0D10; /* 赤色（怒り） */
+}
+
+.joy {
+  color: #657F0A; /* 黄色（喜び） */
+}
+
+.sadness {
+  color: #675FCF; /* 青色（悲しみ） */
 }
 </style>
